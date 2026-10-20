@@ -1,0 +1,44 @@
+{{define "content"}}
+<div class="card">
+  <h1>Новая паста</h1>
+  <form method="post" action="{{.Base}}/pastes">
+    <input type="hidden" name="csrf" value="{{.CSRF}}">
+    <label for="title">Заголовок</label>
+    <input id="title" name="title" type="text" required maxlength="200">
+
+    <label for="body">Текст (raw text)</label>
+    <textarea id="body" name="body" spellcheck="false"></textarea>
+
+    {{if .IsAdmin}}
+    <label>Кому доступна</label>
+    <div class="check">
+      <input type="radio" id="aud-all" name="audience" value="all" checked>
+      <label for="aud-all" style="margin:0">Всем</label>
+    </div>
+    <div class="check">
+      <input type="radio" id="aud-specific" name="audience" value="specific">
+      <label for="aud-specific" style="margin:0">Конкретным пользователям</label>
+    </div>
+    {{if .Users}}
+    <div style="margin-left:22px">
+      {{range .Users}}
+      <div class="check">
+        <input type="checkbox" id="u-{{.ID}}" name="recipients" value="{{.ID}}">
+        <label for="u-{{.ID}}" style="margin:0">{{.Username}}</label>
+      </div>
+      {{end}}
+    </div>
+    {{else}}
+    <p class="muted" style="margin-left:22px">Нет активных пользователей.</p>
+    {{end}}
+    {{else}}
+    <p class="muted">Ваша паста будет доступна только администратору (и вам).</p>
+    {{end}}
+
+    <div class="row" style="margin-top:20px">
+      <button class="btn" type="submit">Сохранить</button>
+      <a class="btn ghost" href="{{.Base}}">Отмена</a>
+    </div>
+  </form>
+</div>
+{{end}}

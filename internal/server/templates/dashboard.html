@@ -1,0 +1,34 @@
+{{define "content"}}
+{{if .ShowCounter}}<div class="badge">Новых паст с момента последнего захода: {{.Counter}}</div>{{end}}
+
+<div class="card">
+  <div class="row" style="justify-content:space-between">
+    <h1 style="margin:0">Пасты</h1>
+    <a class="btn" href="{{.Base}}/pastes/new">Создать пасту</a>
+  </div>
+</div>
+
+{{if .Pastes}}
+{{range .Pastes}}
+<article class="card">
+  <div class="row" style="justify-content:space-between">
+    <h2 style="margin:0"><a href="{{$.Base}}/pastes/{{.ID}}">{{.Title}}</a></h2>
+    <span class="muted">автор: {{.Author}}</span>
+  </div>
+  <p class="muted" style="margin:6px 0 12px">
+    <time class="ts" datetime="{{.CreatedISO}}" data-utc="{{.CreatedUTC}}">{{.CreatedUTC}}</time>
+    · доступ: {{.Audience}}{{if .IsDeleted}} · <strong>удалена</strong>{{end}}
+  </p>
+  <pre class="body">{{.Body}}</pre>
+  {{if and .CanDelete (not .IsDeleted)}}
+  <form method="post" action="{{$.Base}}/admin/pastes/{{.ID}}/delete" style="margin-top:14px">
+    <input type="hidden" name="csrf" value="{{$.CSRF}}">
+    <button class="btn danger" type="submit">Удалить пасту</button>
+  </form>
+  {{end}}
+</article>
+{{end}}
+{{else}}
+<div class="card"><p class="muted">Пока нет доступных паст.</p></div>
+{{end}}
+{{end}}

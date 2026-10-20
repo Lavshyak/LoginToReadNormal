@@ -1,0 +1,92 @@
+{{define "layout"}}<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>{{if .Title}}{{.Title}} — {{end}}Пасты</title>
+<style>
+  :root { color-scheme: light dark; }
+  * { box-sizing: border-box; }
+  body { font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+         margin: 0; background: #f5f6f8; color: #1a1a1a; }
+  header { background: #fff; border-bottom: 1px solid #e6e8ec; padding: 12px 20px;
+           display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+  header .brand { font-weight: 600; margin-right: auto; }
+  header a { color: #2d6cdf; text-decoration: none; font-size: 14px; }
+  header a:hover { text-decoration: underline; }
+  header .who { font-size: 13px; color: #666; }
+  main { max-width: 900px; margin: 0 auto; padding: 24px 20px 60px; }
+  .card { background: #fff; border-radius: 12px; box-shadow: 0 4px 16px rgba(0,0,0,.06);
+          padding: 20px; margin-bottom: 18px; }
+  h1 { font-size: 20px; margin: 0 0 16px; }
+  h2 { font-size: 16px; margin: 0 0 12px; }
+  main a { color: #2d6cdf; text-decoration: none; }
+  main a:hover { text-decoration: underline; }
+  .badge { display: inline-block; background: #eef4ff; color: #245bc0; border-radius: 999px;
+           padding: 4px 12px; font-size: 13px; margin-bottom: 16px; }
+  .notice { background: #ecfdf3; color: #067647; border-radius: 8px; padding: 10px 12px;
+            font-size: 14px; margin-bottom: 16px; word-break: break-all; }
+  .error { background: #fdecec; color: #b42318; border-radius: 8px; padding: 10px 12px;
+           font-size: 14px; margin-bottom: 16px; }
+  table { width: 100%; border-collapse: collapse; }
+  th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid #eef0f3; font-size: 14px; }
+  th { color: #666; font-weight: 600; font-size: 13px; }
+  time.ts { font-variant-numeric: tabular-nums; font-size: 13px; color: #555; }
+  pre.body { white-space: pre-wrap; word-wrap: break-word; background: #f8f9fb;
+             border: 1px solid #eceef2; border-radius: 8px; padding: 14px;
+             font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 13px; margin: 0; }
+  label { display: block; font-size: 13px; margin: 14px 0 4px; color: #555; }
+  input[type=text], input[type=number], input[type=password], textarea, select {
+    width: 100%; padding: 10px 12px; font-size: 14px; border: 1px solid #cfd4da;
+    border-radius: 8px; background: #fff; color: #1a1a1a; }
+  textarea { min-height: 180px; font-family: ui-monospace, Menlo, Consolas, monospace; }
+  .btn { display: inline-block; padding: 10px 16px; font-size: 14px; border: 0; border-radius: 8px;
+         background: #2d6cdf; color: #fff; cursor: pointer; text-decoration: none; }
+  .btn:hover { background: #245bc0; }
+  .btn.danger { background: #d92d20; }
+  .btn.danger:hover { background: #b42318; }
+  .btn.ghost { background: transparent; color: #2d6cdf; border: 1px solid #cfd4da; }
+  .row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+  .check { display: flex; align-items: center; gap: 8px; font-size: 14px; margin: 6px 0; }
+  .check input { width: auto; }
+  ul.list { list-style: none; padding: 0; margin: 0; }
+  ul.list li { padding: 12px 0; border-bottom: 1px solid #eef0f3; }
+  ul.list li:last-child { border-bottom: 0; }
+  .muted { color: #888; font-size: 13px; }
+</style>
+</head>
+<body>
+<header>
+  <span class="brand">Пасты</span>
+  <a href="{{.Base}}">Список</a>
+  <a href="{{.Base}}/pastes/new">Новая паста</a>
+  {{if .IsAdmin}}<a href="{{.Base}}/admin/users">Пользователи</a>{{end}}
+  <span class="who">{{.Actor.Username}}{{if .IsAdmin}} (админ){{end}}</span>
+  <form method="post" action="{{.Base}}/logout" style="margin:0">
+    <input type="hidden" name="csrf" value="{{.CSRF}}">
+    <button class="btn ghost" type="submit">Выйти</button>
+  </form>
+</header>
+<main>
+  {{if .Notice}}<div class="notice">{{.Notice}}</div>{{end}}
+  {{if .Error}}<div class="error">{{.Error}}</div>{{end}}
+  {{template "content" .}}
+</main>
+<script>
+(function () {
+  var fmt = new Intl.DateTimeFormat(undefined, { dateStyle: 'short', timeStyle: 'medium' });
+  var tz = 'локальное';
+  try { tz = Intl.DateTimeFormat().resolvedOptions().timeZone || tz; } catch (e) {}
+  var nodes = document.querySelectorAll('time.ts');
+  for (var i = 0; i < nodes.length; i++) {
+    var el = nodes[i];
+    var d = new Date(el.getAttribute('datetime'));
+    if (isNaN(d.getTime())) continue;
+    el.textContent = 'UTC ' + el.getAttribute('data-utc') + ' · ' + fmt.format(d) + ' (' + tz + ')';
+  }
+})();
+</script>
+</body>
+</html>
+{{end}}

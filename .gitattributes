@@ -1,0 +1,8 @@
+# Keep shell scripts with LF endings (required for shebang execution in Linux containers).
+*.sh text eol=lf
+# Go sources
+*.go text eol=lf
+# Dockerfile and compose
+Dockerfile text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf

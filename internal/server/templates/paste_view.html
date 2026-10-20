@@ -1,0 +1,20 @@
+{{define "content"}}
+<div class="card">
+  <div class="row" style="justify-content:space-between">
+    <h1 style="margin:0">{{.Paste.Title}}</h1>
+    <a class="btn ghost" href="{{.Base}}">Назад</a>
+  </div>
+  <p class="muted">
+    автор: {{.Paste.Author}} · доступ: {{.Paste.Audience}} ·
+    <time class="ts" datetime="{{.Paste.CreatedISO}}" data-utc="{{.Paste.CreatedUTC}}">{{.Paste.CreatedUTC}}</time>
+  </p>
+  <pre class="body">{{.Paste.Body}}</pre>
+
+  {{if .Paste.CanDelete}}{{if not .Paste.IsDeleted}}
+  <form method="post" action="{{.Base}}/admin/pastes/{{.Paste.ID}}/delete" style="margin-top:16px">
+    <input type="hidden" name="csrf" value="{{.CSRF}}">
+    <button class="btn danger" type="submit">Удалить пасту</button>
+  </form>
+  {{end}}{{end}}
+</div>
+{{end}}

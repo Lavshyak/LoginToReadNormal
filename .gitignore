@@ -1,0 +1,15 @@
+# Secrets / local config
+.env
+
+# Runtime data (SQLite)
+data/
+*.db
+*.db-shm
+*.db-wal
+
+# nginx certificates
+nginx/certs/
+
+# Build artifacts
+/app
+/bin/

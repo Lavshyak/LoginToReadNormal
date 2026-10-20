@@ -1,0 +1,11 @@
+.git
+.gitignore
+data
+*.db
+*.db-shm
+*.db-wal
+nginx/certs
+README.md
+task1.txt
+taskSource.txt
+.env

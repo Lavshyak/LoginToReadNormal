@@ -1,0 +1,37 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    env_file:
+      - .env
+    environment:
+      # Override so the container always uses the mounted volume path.
+      DB_PATH: /data/app.db
+      LISTEN_ADDR: ":8080"
+    volumes:
+      - ./data:/data
+    expose:
+      - "8080"          # internal only; never published to the host
+    restart: unless-stopped
+    networks:
+      - web
+
+  nginx:
+    build:
+      context: ./nginx
+      dockerfile: Dockerfile
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/certs:/etc/nginx/certs
+    depends_on:
+      - app
+    restart: unless-stopped
+    networks:
+      - web
+
+networks:
+  web:
+    driver: bridge
