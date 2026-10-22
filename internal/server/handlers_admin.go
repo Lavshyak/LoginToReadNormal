@@ -79,18 +79,20 @@ func (s *Server) handleAdminCreateUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Activation window: the user must activate within this many days after
+	// creation. Once activated the account is permanent (no expiry).
 	now := nowUTC()
 	days := 0
 	if v := strings.TrimSpace(r.PostFormValue("ttl_days")); v != "" {
 		days, _ = strconv.Atoi(v)
 	}
-	var expires *time.Time
+	var activateBy *time.Time
 	if days > 0 {
 		e := now.Add(time.Duration(days) * 24 * time.Hour)
-		expires = &e
+		activateBy = &e
 	} else if s.cfg.DefaultUserTTL > 0 {
 		e := now.Add(s.cfg.DefaultUserTTL)
-		expires = &e
+		activateBy = &e
 	}
 
 	primaryPassword, err := auth.RandomPassword(16)
@@ -103,14 +105,18 @@ func (s *Server) handleAdminCreateUser(w http.ResponseWriter, r *http.Request) {
 		s.renderUsers(w, r, lc, "Внутренняя ошибка.")
 		return
 	}
-	if _, err := s.repo.CreateUser(r.Context(), username, hash, expires); err != nil {
+	if _, err := s.repo.CreateUser(r.Context(), username, hash, activateBy); err != nil {
 		s.renderUsers(w, r, lc, "Не удалось создать пользователя.")
 		return
 	}
 
+	window := "без ограничения по времени"
+	if activateBy != nil {
+		window = activateBy.UTC().Format("2006-01-02 15:04:05 UTC")
+	}
 	notice := fmt.Sprintf(
-		"Пользователь %q создан. Логин: %s. Первичный пароль (показывается один раз): %s",
-		username, username, primaryPassword)
+		"Пользователь %q создан. Логин: %s. Первичный пароль (показывается один раз): %s. Активировать до: %s. После активации доступ бессрочный.",
+		username, username, primaryPassword, window)
 	s.renderUsers(w, r, lc, notice)
 }
 

@@ -13,7 +13,7 @@ type Actor struct {
 	CreatedAt     time.Time
 	FirstSeenAt   *time.Time // first activation (baseline of the very first visit)
 	LastSeenAt    *time.Time // start of the previous visit (counter baseline)
-	ExpiresAt     *time.Time // user availability deadline (requirement 6)
+	ExpiresAt     *time.Time // deadline for activation; nil = account is permanent (already activated or no deadline)
 	IsActive      bool
 	PrimaryActive bool // primary login/password still valid
 }
@@ -30,7 +30,8 @@ func (a *Actor) CounterBaseline() *time.Time {
 // IsAdmin reports whether the actor is an administrator.
 func (a *Actor) IsAdmin() bool { return a.Role == "admin" }
 
-// Expired reports whether the actor's availability window has passed.
+// Expired reports whether the actor's activation deadline has passed. A nil
+// deadline means "never expires" (an activated account is permanent).
 func (a *Actor) Expired(now time.Time) bool {
 	return a.ExpiresAt != nil && now.After(*a.ExpiresAt)
 }

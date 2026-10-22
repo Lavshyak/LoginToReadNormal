@@ -334,3 +334,104 @@ func TestDeleteUserRevokesAccessButKeepsPastes(t *testing.T) {
 		t.Fatalf("deleting the admin error = %v, want ErrNotFound", err)
 	}
 }
+
+func TestActivationMakesAccountPermanent(t *testing.T) {
+	ctx := context.Background()
+	r, _ := newTestRepo(t)
+	// Timestamps are stored with second precision, so build the fixture the
+	// same way to compare exactly.
+	now := time.Now().UTC().Truncate(time.Second)
+	deadline := now.Add(48 * time.Hour)
+
+	alice, err := r.CreateUser(ctx, "alice", "h", &deadline)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Before activation only the activation window applies.
+	a, err := r.ActorByID(ctx, alice)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if a.ExpiresAt == nil || !a.ExpiresAt.Equal(deadline) {
+		t.Fatalf("activation deadline = %v, want %v", a.ExpiresAt, deadline)
+	}
+	if a.Expired(now.Add(time.Hour)) {
+		t.Fatal("user must be usable inside the activation window")
+	}
+	if !a.Expired(now.Add(72 * time.Hour)) {
+		t.Fatal("user must not be usable after the activation window")
+	}
+
+	// Activate.
+	if _, err := r.Activate(ctx, alice, "token-hash", "pw-hash", now); err != nil {
+		t.Fatal(err)
+	}
+
+	a, err = r.ActorByID(ctx, alice)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if a.ExpiresAt != nil {
+		t.Fatalf("activated account still has a deadline: %v", a.ExpiresAt)
+	}
+	if a.Expired(now.Add(100000 * time.Hour)) {
+		t.Fatal("an activated account must never expire")
+	}
+	if a.PrimaryActive {
+		t.Fatal("primary credentials must be consumed on activation")
+	}
+	if a.FirstSeenAt == nil {
+		t.Fatal("first_seen_at must be recorded on activation")
+	}
+
+	link, err := r.LinkByTokenHash(ctx, "token-hash")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !link.IsActive {
+		t.Fatal("the permanent link must be active after activation")
+	}
+}
+
+func TestActivationWindowHidesUserFromRecipients(t *testing.T) {
+	ctx := context.Background()
+	r, _ := newTestRepo(t)
+	now := time.Now().UTC()
+
+	past := now.Add(-time.Hour)
+	future := now.Add(48 * time.Hour)
+
+	if _, err := r.CreateUser(ctx, "windowgone", "h", &past); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := r.CreateUser(ctx, "pending", "h", &future); err != nil {
+		t.Fatal(err)
+	}
+	activated, err := r.CreateUser(ctx, "activated", "h", &future)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := r.Activate(ctx, activated, "t", "p", now); err != nil {
+		t.Fatal(err)
+	}
+
+	users, err := r.ListActiveUsers(ctx, now)
+	if err != nil {
+		t.Fatal(err)
+	}
+	got := map[string]bool{}
+	for _, u := range users {
+		got[u.Username] = true
+	}
+
+	if got["windowgone"] {
+		t.Error("a user whose activation window has passed must not be offered")
+	}
+	if !got["pending"] {
+		t.Error("a user inside the activation window must be offered")
+	}
+	if !got["activated"] {
+		t.Error("an activated (permanent) user must be offered")
+	}
+}

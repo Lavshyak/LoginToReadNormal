@@ -6,8 +6,13 @@
     <label for="username">Юзернейм (он же логин первичного входа)</label>
     <input id="username" name="username" type="text" required maxlength="64"
            pattern="[A-Za-z0-9._-]{3,64}" autocomplete="off">
-    <label for="ttl">Сколько времени доступно, дней (0 = по умолчанию)</label>
+    <label for="ttl">Окно активации: сколько дней даётся на активацию (0 = по умолчанию)</label>
     <input id="ttl" name="ttl_days" type="number" min="0" value="0">
+    <p class="muted">
+      Юзер должен активировать аккаунт (первичный URL + логин/первичный пароль)
+      в течение этого срока. Если не успел — первичный пароль перестаёт работать.
+      После активации доступ бессрочный.
+    </p>
     <div class="row" style="margin-top:18px">
       <button class="btn" type="submit">Создать</button>
     </div>
@@ -19,7 +24,7 @@
   {{if .Users}}
   <table>
     <thead>
-      <tr><th>Логин</th><th>Создан</th><th>Доступ до</th><th>Статус</th><th>Действия</th></tr>
+      <tr><th>Логин</th><th>Создан</th><th>Активировать до</th><th>Статус</th><th>Действия</th></tr>
     </thead>
     <tbody>
       {{range .Users}}
@@ -30,7 +35,7 @@
         <td>
           {{if not .IsActive}}заблокирован
           {{else if .PrimaryActive}}ожидает активации
-          {{else}}активен{{end}}
+          {{else}}активен (бессрочно){{end}}
         </td>
         <td>
           <form method="post" action="{{$.Base}}/admin/users/{{.ID}}/delete" style="margin:0"

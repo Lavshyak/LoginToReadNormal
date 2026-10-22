@@ -85,8 +85,10 @@ func Open(path string) (*sql.DB, error) {
 	return d, nil
 }
 
-// Migrate applies the schema and the idempotent column additions needed for
-// databases created by an earlier version.
+// Migrate applies the schema, the idempotent column additions needed for
+// databases created by an earlier version, and the data fix-ups that keep an
+// in-place upgrade safe. Nothing is dropped or recreated, so existing data is
+// preserved.
 func Migrate(ctx context.Context, d *sql.DB) error {
 	if _, err := d.ExecContext(ctx, schema); err != nil {
 		return err
@@ -99,6 +101,23 @@ func Migrate(ctx context.Context, d *sql.DB) error {
 		if err := ensureColumn(ctx, d, c.table, c.column, c.ddl); err != nil {
 			return err
 		}
+	}
+
+	// Behaviour change (safe, data-preserving):
+	//   actors.expires_at used to mean the TOTAL account lifetime counted from
+	//   the moment the admin created the user. It now means only the ACTIVATION
+	//   WINDOW: a user must activate before this moment, and once activated the
+	//   account is permanent (Activate sets expires_at = NULL).
+	//   Clear the deadline for everyone who has already activated (first_seen_at
+	//   is written exactly at activation), so upgrading an existing database
+	//   never locks out users who were already active.
+	if _, err := d.ExecContext(ctx, `
+        UPDATE actors
+           SET expires_at = NULL
+         WHERE role = 'user'
+           AND first_seen_at IS NOT NULL
+           AND expires_at IS NOT NULL`); err != nil {
+		return err
 	}
 	return nil
 }
