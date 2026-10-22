@@ -1,0 +1,32 @@
+#to update:
+#wget https://github.com/Lavshyak/LoginToReadNormal/releases/download/1.0.1/login-to-read-normal-app_1.0.1.tar
+#sudo docker load -i login-to-read-normal-app_1.0.1.tar
+#sudo docker rm -f logintoreadnormal-app-1
+#sudo docker compose up -d
+
+services:
+  app:
+    image: login-to-read-normal-app:1.0.1
+    #build:
+    #  context: .
+    #  dockerfile: Dockerfile
+    env_file:
+      - .env
+    environment:
+      # Override so the container always uses the mounted volume path.
+      DB_PATH: /data/app.db
+      LISTEN_ADDR: ":8080"
+    volumes:
+      - ./data:/data:rw
+    # раскомментировать если не работает
+    #expose:
+    #  - "8080"          # internal only; never published to the host
+    ports:
+      - "127.0.0.1:8084:8080"
+    restart: unless-stopped
+    networks:
+      - web
+
+networks:
+  web:
+    driver: bridge
