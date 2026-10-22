@@ -24,6 +24,9 @@ func main() {
 }
 
 func run() error {
+
+	log.Printf("version 1.0.1")
+
 	cfg, err := config.Load()
 	if err != nil {
 		return err
