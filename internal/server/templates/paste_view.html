@@ -8,6 +8,12 @@
     автор: {{.Paste.Author}} · доступ: {{.Paste.Audience}} ·
     <time class="ts" datetime="{{.Paste.CreatedISO}}" data-utc="{{.Paste.CreatedUTC}}">{{.Paste.CreatedUTC}}</time>
   </p>
+  {{if and .IsAdmin .Paste.IsSpecific}}
+  <p class="muted">
+    Получатели:
+    {{if .Paste.Recipients}}{{join .Paste.Recipients ", "}}{{else}}никому не назначено{{end}}
+  </p>
+  {{end}}
   <pre class="body">{{.Paste.Body}}</pre>
 
   {{if .Paste.CanDelete}}{{if not .Paste.IsDeleted}}

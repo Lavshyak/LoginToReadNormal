@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"strings"
 	"time"
 
 	"logintoreadnormal/internal/db"
@@ -122,6 +123,44 @@ func (r *Repo) CanView(ctx context.Context, actor *models.Actor, adminID int64, 
 		}
 	}
 	return false, nil
+}
+
+// RecipientsForPastes returns the recipient logins grouped by paste id, ordered
+// by login. Only "specific" pastes have recipients; unknown ids are absent.
+func (r *Repo) RecipientsForPastes(ctx context.Context, pasteIDs []int64) (map[int64][]string, error) {
+	out := make(map[int64][]string)
+	if len(pasteIDs) == 0 {
+		return out, nil
+	}
+
+	placeholders := strings.TrimSuffix(strings.Repeat("?,", len(pasteIDs)), ",")
+	args := make([]any, 0, len(pasteIDs))
+	for _, id := range pasteIDs {
+		args = append(args, id)
+	}
+
+	rows, err := r.DB.QueryContext(ctx, `
+        SELECT r.paste_id, a.username
+          FROM paste_recipients r
+          JOIN actors a ON a.id = r.actor_id
+         WHERE r.paste_id IN (`+placeholders+`)
+         ORDER BY a.username ASC`, args...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var (
+			pasteID  int64
+			username string
+		)
+		if err := rows.Scan(&pasteID, &username); err != nil {
+			return nil, err
+		}
+		out[pasteID] = append(out[pasteID], username)
+	}
+	return out, rows.Err()
 }
 
 // SoftDeletePaste wipes the body but keeps the row (placeholder for viewers).

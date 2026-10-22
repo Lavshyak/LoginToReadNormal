@@ -113,9 +113,14 @@ func (s *Server) handlePasteView(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	v, err := s.pasteViewFor(r.Context(), lc.Actor, *p)
+	if err != nil {
+		s.renderError(w, s.appData(w, r, lc), "Не удалось загрузить получателей пасты.", http.StatusInternalServerError)
+		return
+	}
+
 	d := s.appData(w, r, lc)
 	d.Title = p.Title
-	v := newPasteView(*p, lc.Actor.IsAdmin())
 	d.Paste = &v
 	s.render(w, "paste_view", d, http.StatusOK)
 }

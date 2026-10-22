@@ -128,9 +128,11 @@ func (s *Server) renderDashboard(w http.ResponseWriter, r *http.Request, lc *lin
 		return
 	}
 
-	views := make([]pasteView, 0, len(pastes))
-	for _, p := range pastes {
-		views = append(views, newPasteView(p, lc.Actor.IsAdmin()))
+	// Admin sees the recipient logins of "specific" pastes (single extra query).
+	views, err := s.pasteViewsFor(ctx, lc.Actor, pastes)
+	if err != nil {
+		s.renderError(w, s.appData(w, r, lc), "Не удалось загрузить получателей паст.", http.StatusInternalServerError)
+		return
 	}
 
 	d := s.appData(w, r, lc)

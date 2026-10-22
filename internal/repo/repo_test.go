@@ -435,3 +435,52 @@ func TestActivationWindowHidesUserFromRecipients(t *testing.T) {
 		t.Error("an activated (permanent) user must be offered")
 	}
 }
+
+func TestRecipientsForPastes(t *testing.T) {
+	ctx := context.Background()
+	r, adminID := newTestRepo(t)
+	now := time.Now().UTC()
+
+	alice, err := r.CreateUser(ctx, "alice", "h", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	bob, err := r.CreateUser(ctx, "bob", "h", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Created out of alphabetical order on purpose.
+	specific, err := r.CreatePaste(ctx, adminID, "to-both", "b", "specific", []int64{bob, alice}, now)
+	if err != nil {
+		t.Fatal(err)
+	}
+	toAll, err := r.CreatePaste(ctx, adminID, "to-all", "b", "all", nil, now)
+	if err != nil {
+		t.Fatal(err)
+	}
+	empty, err := r.CreatePaste(ctx, adminID, "to-nobody", "b", "specific", nil, now)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	m, err := r.RecipientsForPastes(ctx, []int64{specific, toAll, empty})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if got := m[specific]; !equalSlices(got, []string{"alice", "bob"}) {
+		t.Fatalf("recipients of a specific paste = %v, want [alice bob] (sorted)", got)
+	}
+	if got := m[toAll]; len(got) != 0 {
+		t.Fatalf("an 'all' paste must have no recipients, got %v", got)
+	}
+	if got, ok := m[empty]; ok && len(got) != 0 {
+		t.Fatalf("a specific paste without recipients must map to nothing, got %v", got)
+	}
+
+	// Empty input must be a cheap no-op, not an error.
+	if m, err := r.RecipientsForPastes(ctx, nil); err != nil || len(m) != 0 {
+		t.Fatalf("empty input: map=%v err=%v", m, err)
+	}
+}
