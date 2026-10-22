@@ -13,3 +13,5 @@ nginx/certs/
 # Build artifacts
 /app
 /bin/
+
+.builds

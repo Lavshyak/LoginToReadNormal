@@ -1,6 +1,6 @@
 services:
   app:
-    image: login-to-read-normal-app:1.0.0
+    image: login-to-read-normal-app:1.0.1
     build:
       context: .
       dockerfile: Dockerfile
